@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.1" />
+    <PackageReference Include="MongoDB.Driver" Version="2.8.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VtuberBot.Core\VtuberBot.Core.csproj" />
+    <ProjectReference Include="..\VtuberBot.Spider\VtuberBot.Spider.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="StreamDownloader.Core">
+      <HintPath>..\..\StreamDownloader\StreamDownloader.Core\bin\Debug\netcoreapp2.1\StreamDownloader.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="VideoRecordService">
+      <HintPath>..\..\QQBots\VideoRecordService\bin\Release\netcoreapp2.1\ubuntu.16.04-x64\VideoRecordService.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

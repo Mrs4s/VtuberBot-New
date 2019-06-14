@@ -1,0 +1,1 @@
+{"DatabaseUrl":null,"CallbackSign":"default sign","ListenUrl":"http://0.0.0.0:2998","GroupConfigs":[],"Clients":[{"ClientId":"default client","Services":[{"Level":0,"ServiceType":"LightQQ","ListenUrl":"http://127.0.0.1/bot","WsUrl":"ws://127.0.0.1/bot","ListenPort":0,"AccessToken":"your access token"}]}]}
