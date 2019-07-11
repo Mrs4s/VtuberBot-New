@@ -61,7 +61,7 @@ namespace VtuberBot.Spider.Services
             LiveClient.CloseConnect();
         }
 
-        private void GotGiftEvent(BilibiliGiftInfo gift)
+        private async void GotGiftEvent(BilibiliGiftInfo gift)
         {
             var commentInfo = new BilibiliCommentInfo()
             {
@@ -79,7 +79,7 @@ namespace VtuberBot.Spider.Services
             };
             try
             {
-                _commentCollection.InsertOne(commentInfo);
+                await _commentCollection.InsertOneAsync(commentInfo);
             }
             catch (Exception ex)
             {
@@ -87,7 +87,7 @@ namespace VtuberBot.Spider.Services
             }
         }
 
-        private void GotDanmakuEvent(BilibiliDanmakuInfo danmaku)
+        private async void GotDanmakuEvent(BilibiliDanmakuInfo danmaku)
         {
             var commentInfo = new BilibiliCommentInfo()
             {
@@ -107,7 +107,7 @@ namespace VtuberBot.Spider.Services
             };
             try
             {
-                _commentCollection.InsertOne(commentInfo);
+                await _commentCollection.InsertOneAsync(commentInfo);
             }
             catch (Exception ex)
             {

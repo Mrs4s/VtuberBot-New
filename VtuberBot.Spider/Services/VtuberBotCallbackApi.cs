@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using VtuberBot.Core.Entities;
 using VtuberBot.Core.Extensions;
 using VtuberBot.Spider.Services.Bilibili;
+using VtuberBot.Spider.Services.Bilibili.Live;
 using VtuberBot.Spider.Services.Twitter;
 using VtuberBot.Spider.Services.Youtube;
 
@@ -59,11 +60,11 @@ namespace VtuberBot.Spider.Services
             }
         }
 
-        public async Task CallYoutubeCommentedAsync(VtuberEntity commentAuthor,VtuberEntity liveAuthor,YoutubeLiveChat comment)
+        public async Task CallYoutubeCommentedAsync(VtuberEntity commentAuthor, VtuberEntity liveAuthor, YoutubeLiveChat comment)
         {
             using (var client = HttpClientExtensions.CreateClient())
             {
-                var body=new YoutubeLiveChatCallbackBody()
+                var body = new YoutubeLiveChatCallbackBody()
                 {
                     VtuberName = commentAuthor.OriginalName,
                     LiveAuthorName = liveAuthor.OriginalName,
@@ -92,15 +93,15 @@ namespace VtuberBot.Spider.Services
             }
         }
 
-        public async Task CallBilibiliBeginLiveAsync(VtuberEntity vtuber, BilibiliUser user)
+        public async Task CallBilibiliBeginLiveAsync(VtuberEntity vtuber, BilibiliLiveRoom room)
         {
             using (var client = HttpClientExtensions.CreateClient())
             {
                 var body = new BilibiliLiveCallbackBody()
                 {
                     VtuberName = vtuber.OriginalName,
-                    LiveLink = "https://live.bilibili.com/" + user.LiveRoomId,
-                    LiveTitle = user.LiveTitle,
+                    LiveLink = "https://live.bilibili.com/" + vtuber.BilibiliLiveRoomId,
+                    LiveTitle = room.Title,
                     StartTime = DateTime.Now.ToTimestamp(),
                     Sign = Sign
                 };

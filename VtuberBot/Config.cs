@@ -21,24 +21,7 @@ namespace VtuberBot
 
         public List<GroupConfig> GroupConfigs { get; set; } = new List<GroupConfig>();
 
-        public List<BotServiceClient> Clients { get; set; } = new List<BotServiceClient>()
-        {
-            new BotServiceClient()
-            {
-                ClientId = "default client",
-                Services = new []
-                {
-                    new BotServiceConfig()
-                    {
-                        ServiceType = "LightQQ",
-                        AccessToken = "your access token",
-                        ListenPort = 0,
-                        ListenUrl = "http://127.0.0.1/bot",
-                        WsUrl = "ws://127.0.0.1/bot"
-                    },
-                }
-            }
-        };
+        public List<BotServiceClient> Clients { get; set; } 
 
 
         public static Config LoadDefaultConfig()

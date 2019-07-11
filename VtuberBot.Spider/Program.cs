@@ -10,6 +10,7 @@ using VtuberBot.Core.Entities;
 using VtuberBot.Core.Extensions;
 using VtuberBot.Spider.Services;
 using VtuberBot.Spider.Services.Bilibili;
+using VtuberBot.Spider.Services.Bilibili.Live;
 using VtuberBot.Spider.Services.Twitter;
 using VtuberBot.Spider.Services.Youtube;
 
@@ -57,11 +58,11 @@ namespace VtuberBot.Spider
                 await api.CallYoutubeCommentedAsync(author, target, message);
         }
 
-        private static async void VtuberBeginBilibiliLiveEvent(VtuberEntity vtuber, BilibiliUser user)
+        private static async void VtuberBeginBilibiliLiveEvent(VtuberEntity vtuber, BilibiliLiveRoom room)
         {
-            LogHelper.Info($"Vtuber [{vtuber.OriginalName}] 在B站开始了直播 {user.LiveTitle}");
+            LogHelper.Info($"Vtuber [{vtuber.OriginalName}] 在B站开始了直播 {room.Title}");
             foreach (var api in CallbackApis)
-                await api.CallBilibiliBeginLiveAsync(vtuber, user);
+                await api.CallBilibiliBeginLiveAsync(vtuber, room);
         }
 
         private static async void VtuberStoppedYoutubeLiveEvent(VtuberEntity vtuber, YoutubeVideo liveVideo)

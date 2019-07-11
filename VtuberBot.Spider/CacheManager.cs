@@ -67,8 +67,8 @@ namespace VtuberBot.Spider
         public event Action<VtuberEntity, YoutubeVideo> VtuberUploadYoutubeVideoEvent;
         public event Action<VtuberEntity, YoutubeVideo> VtuberStoppedYoutubeLiveEvent;
         public event Action<VtuberEntity, VtuberEntity, YoutubeLiveChat, YoutubeVideo> VtuberCommentedYoutubeLiveEvent; //评论者 目标Vtuber 评论内容 视频 
-        public event Action<VtuberEntity, BilibiliUser> VtuberBeginBilibiliLiveEvent;
-        public event Action<VtuberEntity, BilibiliUser> VtuberStoppedBilibiliLiveEvent;
+        public event Action<VtuberEntity, BilibiliLiveRoom> VtuberBeginBilibiliLiveEvent;
+        public event Action<VtuberEntity, BilibiliLiveRoom> VtuberStoppedBilibiliLiveEvent;
         public event Action<VtuberEntity, TweetInfo> VtuberPublishTweetEvent;
         public event Action<VtuberEntity, TweetInfo> VtuberReplyTweetEvent;
         public event Action<VtuberEntity, TweetInfo> VtuberRetweetedEvent;
@@ -123,8 +123,10 @@ namespace VtuberBot.Spider
                     try
                     {
                         await Task.Delay(1000 * 30);
+                        LogHelper.Info("开始爬取B站相关信息");
                         var vtuberList = (await _vtuberCollection.FindAsync(v => true)).ToList();
                         await BilibiliLiveCheckTimer(vtuberList);
+                        LogHelper.Info("爬取完成.");
                     }
                     catch (Exception ex)
                     {
@@ -221,7 +223,7 @@ namespace VtuberBot.Spider
                                    {
                                        Title = live.Title,
                                        Channel = live.ChannelId,
-                                       BeginTime = live.LiveDetails?.ActualStartTime ?? default,
+                                       BeginTime = live.LiveDetails?.ActualStartTime ?? default(DateTime),
                                        EndTime = live.LiveDetails?.ActualEndTime ?? DateTime.Now,
                                        VideoId = live.VideoId
                                    };
@@ -244,49 +246,55 @@ namespace VtuberBot.Spider
 
         private async Task BilibiliLiveCheckTimer(IEnumerable<VtuberEntity> vtubers)
         {
-            foreach (var vtuberEntity in vtubers.Where(v => v.BilibiliUserId != 0))
+            foreach (var vtuberEntity in vtubers.Where(v => v.BilibiliUserId != 0 && v.BilibiliLiveRoomId != -1))
             {
                 if (!LastCheckBilibiliLive.ContainsKey(vtuberEntity))
                     LastCheckBilibiliLive.Add(vtuberEntity, new BilibiliLiveRoom());
-                var userInfo = await BilibiliApi.GetBilibiliUserAsync(vtuberEntity.BilibiliUserId);
-                if (userInfo != null)
+                if (vtuberEntity.BilibiliLiveRoomId == 0)
                 {
-                    if (!BilibiliRecorders.ContainsKey(vtuberEntity) && userInfo.LiveRoomId != 0)
-                    {
-                        BilibiliRecorders.Add(vtuberEntity,
-                            new BilibiliDanmakuRecorder(userInfo.LiveRoomId, vtuberEntity));
-                        await BilibiliRecorders[vtuberEntity].BeginRecordAsync();
-                    }
-                    var roomInfo = await BilibiliApi.GetLiveRoomAsync(userInfo.LiveRoomId);
-                    if (roomInfo == null)
-                        continue;
-                    if (roomInfo.OnLive && !LastCheckBilibiliLive[vtuberEntity].OnLive)
-                    {
-                        var liveId = roomInfo.LiveSession;
-                        var beginTime = DateTimeExtensions.TimestampToDateTime(roomInfo.LiveBeginTime);
-                        void OnLiveStoppedEvent(BilibiliDanmakuRecorder client)
-                        {
-                            LogHelper.Info($"{vtuberEntity.OriginalName} 已停止在B站的直播");
-                            var endTime = DateTime.Now;
-                            var info = new BilibiliLiveInfo()
-                            {
-                                LiveId = liveId,
-                                BeginTime = beginTime,
-                                EndTime = endTime,
-                                ChannelId = vtuberEntity.BilibiliUserId,
-                                MaxPopularity = client.LiveClient.MaxPopularity,
-                                Title = userInfo.LiveTitle
-                            };
-                            _biliLiveCollection.InsertOneAsync(info).Retry(5).GetAwaiter().GetResult();
-                            VtuberStoppedBilibiliLiveEvent?.Invoke(vtuberEntity, userInfo);
-                            BilibiliRecorders[vtuberEntity].LiveStoppedEvent -= OnLiveStoppedEvent;
-                        }
-                        BilibiliRecorders[vtuberEntity].LiveStoppedEvent += OnLiveStoppedEvent;
-                        VtuberBeginBilibiliLiveEvent?.Invoke(vtuberEntity, userInfo);
-                    }
-
-                    LastCheckBilibiliLive[vtuberEntity] = roomInfo;
+                    var userInfo = await BilibiliApi.GetBilibiliUserAsync(vtuberEntity.BilibiliUserId);
+                    vtuberEntity.BilibiliLiveRoomId = userInfo.LiveRoomId == 0 ? -1 : userInfo.LiveRoomId;
+                    _vtuberCollection.ReplaceOne(v => v.Id == vtuberEntity.Id, vtuberEntity,
+                        new UpdateOptions() { IsUpsert = true });
+                    LogHelper.Info($"更新Vtuber {vtuberEntity.OriginalName} 的Live room id: {userInfo.LiveRoomId}");
                 }
+                if (vtuberEntity.BilibiliLiveRoomId <= 0)
+                    continue;
+                if (!BilibiliRecorders.ContainsKey(vtuberEntity) && vtuberEntity.BilibiliLiveRoomId > 0)
+                {
+                    BilibiliRecorders.Add(vtuberEntity,
+                        new BilibiliDanmakuRecorder(vtuberEntity.BilibiliLiveRoomId, vtuberEntity));
+                    LogHelper.Info($"开始监听Vtuber {vtuberEntity.OriginalName} 的B站直播间.");
+                    await BilibiliRecorders[vtuberEntity].BeginRecordAsync();
+                }
+                var roomInfo = await BilibiliApi.GetLiveRoomAsync(vtuberEntity.BilibiliLiveRoomId).Retry(3);
+                if (roomInfo == null)
+                    continue;
+                if (roomInfo.OnLive && !LastCheckBilibiliLive[vtuberEntity].OnLive)
+                {
+                    var liveId = roomInfo.LiveSession;
+                    var beginTime = DateTimeExtensions.TimestampToDateTime(roomInfo.LiveBeginTime);
+                    void OnLiveStoppedEvent(BilibiliDanmakuRecorder client)
+                    {
+                        LogHelper.Info($"{vtuberEntity.OriginalName} 已停止在B站的直播");
+                        var endTime = DateTime.Now;
+                        var info = new BilibiliLiveInfo()
+                        {
+                            LiveId = liveId,
+                            BeginTime = beginTime,
+                            EndTime = endTime,
+                            ChannelId = vtuberEntity.BilibiliUserId,
+                            MaxPopularity = client.LiveClient.MaxPopularity,
+                            Title = roomInfo.Title
+                        };
+                        _biliLiveCollection.InsertOneAsync(info).Retry(5).GetAwaiter().GetResult();
+                        VtuberStoppedBilibiliLiveEvent?.Invoke(vtuberEntity, roomInfo);
+                        BilibiliRecorders[vtuberEntity].LiveStoppedEvent -= OnLiveStoppedEvent;
+                    }
+                    BilibiliRecorders[vtuberEntity].LiveStoppedEvent += OnLiveStoppedEvent;
+                    VtuberBeginBilibiliLiveEvent?.Invoke(vtuberEntity, roomInfo);
+                }
+                LastCheckBilibiliLive[vtuberEntity] = roomInfo;
             }
         }
 

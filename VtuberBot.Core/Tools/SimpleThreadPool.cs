@@ -14,11 +14,13 @@ namespace VtuberBot.Core.Tools
         public Queue<Action> Actions { get; } = new Queue<Action>();
 
 
+
         public void Run()
         {
             var maxThread = Math.Min(Actions.Count, MaxThread);
             var count = Actions.Count;
             var waitEvent = new ManualResetEvent(false);
+
             for (var i = 0; i < maxThread; i++)
             {
                 var action = Actions.Dequeue();
@@ -36,7 +38,7 @@ namespace VtuberBot.Core.Tools
                         }
 
                         CompletedAction++;
-                        if (Actions.Count==0)
+                        if (Actions.Count == 0)
                         {
                             waitEvent.Set();
                             break;
@@ -48,7 +50,8 @@ namespace VtuberBot.Core.Tools
                     }
                 }).Start();
             }
-            waitEvent.WaitOne();
+            waitEvent.WaitOne(1000 * 60);
+
         }
 
     }

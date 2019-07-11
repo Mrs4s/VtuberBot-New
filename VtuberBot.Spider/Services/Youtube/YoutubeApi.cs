@@ -18,7 +18,11 @@ namespace VtuberBot.Spider.Services.Youtube
     {
         private static readonly string ApiKey = Config.DefaultConfig.YoutubeAccessToken;
 
+
         public static IWebProxy Proxy { get; set; }
+
+
+
 
         public static async Task<YoutubeChannel> GetYoutubeChannelAsync(string channelId)
         {
@@ -37,7 +41,7 @@ namespace VtuberBot.Spider.Services.Youtube
                 var microData = homeJson.SelectToken("microformat.microformatDataRenderer");
                 var viewerCountText =
                     liveJson.SelectToken(
-                            "contents.twoColumnWatchNextResults.results.results.contents.[0].videoPrimaryInfoRenderer.viewCount.videoViewCountRenderer.viewCount.simpleText")
+                            "contents.twoColumnWatchNextResults.results.results.contents.[0].videoPrimaryInfoRenderer.viewCount.videoViewCountRenderer.viewCount.runs.[0].text")
                         ?.ToString();
                 var liveVideoId = liveJson.SelectToken(
                         "contents.twoColumnWatchNextResults.results.results.contents.[0].videoPrimaryInfoRenderer.videoActions.menuRenderer.topLevelButtons" +
@@ -299,6 +303,24 @@ namespace VtuberBot.Spider.Services.Youtube
             return result;
         }
 
+        public static IEnumerable<IEnumerable<YoutubeWebLiveChat>> GetWebLiveChatReplayEnumerable(string videoId)
+        {
+            var video = GetYoutubeVideoAsync(videoId).GetAwaiter().GetResult();
+            if (video == null || string.IsNullOrEmpty(video.WebLiveChatId) || video.LiveDetails == null)
+                yield break;
+            var totalTime =
+                ((DateTime)video.LiveDetails.ActualEndTime - (DateTime)video.LiveDetails.ActualStartTime);
+            var offset = 0;
+            var result = new List<YoutubeWebLiveChat>();
+            while (offset < totalTime.TotalMilliseconds)
+            {
+                var replay =
+                    GetWebLiveChatReplayAsync(videoId, video.WebLiveChatId, offset).GetAwaiter().GetResult().Where(v =>
+                        result.All(comment => comment.Id != v.Id));
+                yield return replay;
+            }
+        }
+
 
         public static async Task<YoutubeLiveChatInfo> GetLiveChatInfoAsync(string liveChatId)
         {
@@ -318,9 +340,9 @@ namespace VtuberBot.Spider.Services.Youtube
 
         public static JToken ParseYoutubeInitData(string page)
         {
-            var initData = Regex.Match(page, "ytInitialData\"] = (.*?)};").Groups.First().Value
-                .Replace("ytInitialData\"] = ", string.Empty);
-            initData = initData.Substring(0, initData.Length - 1);
+            var initData = Regex.Match(page, "ytInitialData\"] = JSON\\.parse\\(\"(.*?)\\);").Groups.First().Value
+                .Replace("ytInitialData\"] = JSON.parse(\"", string.Empty).Replace("\\\"","\"").Replace("\\\\","\\");
+            initData = initData.Substring(0, initData.Length - 3);
             return JToken.Parse(initData);
         }
 

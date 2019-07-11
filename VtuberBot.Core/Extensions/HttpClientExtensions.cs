@@ -56,7 +56,7 @@ namespace VtuberBot.Core.Extensions
         {
             var formData = new MultipartFormDataContent(GetBoundary())
             {
-                {new ByteArrayContent(image), "smfile", "image.jpg"}
+                {new ByteArrayContent(image), "name", "name.png"}
             };
             var result = await @this.PostAsync("https://sm.ms/api/upload", formData);
             var json = JToken.Parse(await result.Content.ReadAsStringAsync());

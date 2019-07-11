@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using Newtonsoft.Json;
 
 namespace VtuberBot.Core.Entities
 {
@@ -24,6 +25,12 @@ namespace VtuberBot.Core.Entities
 
         [BsonElement("face")]
         public string FaceLink { get; set; }
+
+        [BsonElement("vdbUuid")]
+        public string VtuberDatabaseUuid { get; set; }
+
+        [BsonElement("bilibiliRoomId")]
+        public long BilibiliLiveRoomId { get; set; }
 
         [BsonElement("youtubeChannelId")]
         public string YoutubeChannelId { get; set; }

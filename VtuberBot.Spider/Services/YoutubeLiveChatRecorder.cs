@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -43,6 +44,7 @@ namespace VtuberBot.Spider.Services
             var num = 0;
             new Thread(() =>
             {
+
                 while (true)
                 {
                     var info = YoutubeApi.GetLiveChatInfoAsync(LiveChatId).GetAwaiter().GetResult();
@@ -91,7 +93,7 @@ namespace VtuberBot.Spider.Services
                             break;
                         }
                     }
-                    Thread.Sleep(info.PollingInterval + 500);
+                    Thread.Sleep(info.PollingInterval < 2000 ? info.PollingInterval : info.PollingInterval - 1000);
                 }
             }).Start();
         }

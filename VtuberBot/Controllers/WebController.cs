@@ -11,6 +11,7 @@ using MongoDB.Driver;
 using VtuberBot.Bot;
 using VtuberBot.Core.Entities;
 using VtuberBot.Core.Extensions;
+using VtuberBot.Spider.Services;
 using VtuberBot.Spider.Services.Twitter;
 using VtuberBot.Spider.Services.Youtube;
 
@@ -25,6 +26,7 @@ namespace VtuberBot.Controllers
         private readonly IMongoCollection<YoutubeLiveFile> _liveFileCollection;
         private readonly IMongoCollection<YoutubeLiveInfo> _liveInfoCollection;
         private readonly IMongoCollection<YoutubeLiveChat> _liveChatCollection;
+        private readonly IMongoCollection<BilibiliCommentInfo> _bilibiliCommentsCollection;
         private readonly IMongoCollection<YoutubeWebLiveChat> _webLiveChatCollection;
         private readonly IMongoCollection<TweetInfo> _tweetsCollection;
 
@@ -37,6 +39,7 @@ namespace VtuberBot.Controllers
             _liveChatCollection = observer.Database.GetCollection<YoutubeLiveChat>("youtube-live-chats");
             _webLiveChatCollection = observer.Database.GetCollection<YoutubeWebLiveChat>("youtube-web-live-chats");
             _tweetsCollection = observer.Database.GetCollection<TweetInfo>("tweet-details");
+            _bilibiliCommentsCollection = observer.Database.GetCollection<BilibiliCommentInfo>("bili-live-comments");
         }
 
         // ------ Bot api ------
@@ -98,6 +101,58 @@ namespace VtuberBot.Controllers
                     $"<tr><td>{v.OriginalName}</td><td>{v.Group}</td><td>{string.Join(',', v.NickNames)}</td></tr>"));
             htmlContent += "</table>";
             return Content(htmlContent, "text/html", Encoding.UTF8);
+        }
+
+        [HttpGet("vtuber/refresh")]
+        public async Task<IActionResult> RefreshVtuber([FromQuery] string uid)
+        {
+            if (string.IsNullOrEmpty(uid))
+            {
+                return Json(new
+                {
+                    error = 1,
+                    message = "UID cannot be empty or null"
+                });
+            }
+            var dbVtubers = await VtuberDatabaseApi.GetDatabaseEntitiesAsync();
+            var localVtubers = (await _vtuberCollection.FindAsync(v => true)).ToList();
+            var fromVtuber = dbVtubers.FirstOrDefault(v => v.Uuid == uid);
+            if (fromVtuber == null)
+            {
+                return Json(new
+                {
+                    error = 2,
+                    message = $"UID {uid} not found in vdb."
+                });
+            }
+            var targetVtuber = localVtubers.FirstOrDefault(v => v.VtuberDatabaseUuid == uid || v.OriginalName == fromVtuber.DefaultName);
+            if (targetVtuber != null)
+            {
+                targetVtuber.BilibiliUserId = long.Parse(fromVtuber.GetAccountIdByPlatform("bilibili"));
+                targetVtuber.VtuberDatabaseUuid = fromVtuber.Uuid;
+                await _vtuberCollection.ReplaceOneAsync(v => v.Id == targetVtuber.Id, targetVtuber,
+                    new UpdateOptions() { IsUpsert = true });
+                return Json(new
+                {
+                    error = 0,
+                    message = "refresh completed."
+                });
+            }
+            targetVtuber = new VtuberEntity()
+            {
+                Id = ObjectId.GenerateNewId(),
+                OriginalName = fromVtuber.DefaultName,
+                VtuberDatabaseUuid = fromVtuber.Uuid,
+                YoutubeChannelId = fromVtuber.GetAccountIdByPlatform("youtube"),
+                TwitterProfileId = fromVtuber.GetAccountIdByPlatform("twitter"),
+                BilibiliUserId = long.Parse(fromVtuber.GetAccountIdByPlatform("bilibili"))
+            };
+            await _vtuberCollection.InsertOneAsync(targetVtuber);
+            return Json(new
+            {
+                error = 0,
+                message = "refresh completed."
+            });
         }
 
         [HttpGet("vtuber/{id}/liveHistory")]
@@ -403,9 +458,44 @@ namespace VtuberBot.Controllers
             });
         }
 
-        // ----- Live chat api -----
+        // ----- bilibili api -----
 
+        [HttpGet("live/bilibili/{roomAuthor}/comments")]
+        public async Task<IActionResult> GetBilibiliComments([FromRoute] long roomAuthor, [FromQuery] long beginTime, [FromQuery] long endTime, [FromQuery] long author)
+        {
+            if (roomAuthor == 0)
+            {
+                return BadRequest(new
+                {
+                    error = 1,
+                    message = "Room author error."
+                });
+            }
 
+            var comments = (await _bilibiliCommentsCollection.FindAsync(v =>
+                    v.RoomMasterId == roomAuthor && v.PublishTime >= beginTime && v.PublishTime <= endTime)).ToList()
+                .Select(v => new
+                {
+                    author = v.Userid,
+                    time = v.PublishTime,
+                    content = v.Content,
+                    isGift = !string.IsNullOrEmpty(v.CostType),
+                    giftInfo = new
+                    {
+                        name = v.GiftName,
+                        count = v.GiftCount,
+                        costType = v.CostType,
+                        cost = v.Cost
+                    },
+                    popularity = v.Popularity
+                });
+            return Json(new
+            {
+                error = 0,
+                message = "SUCCESS",
+                comments = author == 0 ? comments : comments.Where(v => v.author == author)
+            });
+        }
 
 
 

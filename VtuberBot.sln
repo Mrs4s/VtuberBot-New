@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.271
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28922.388
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VtuberBot", "VtuberBot\VtuberBot.csproj", "{186DEA13-D146-4281-9865-C48B3A309280}"
 EndProject
@@ -9,11 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VtuberBot.Spider", "VtuberB
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VtuberBot.Core", "VtuberBot.Core\VtuberBot.Core.csproj", "{29D4EE85-2C22-4D0E-8206-A81C8F647CCF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VtuberBot.UnitTest", "VtuberBot.UnitTest\VtuberBot.UnitTest.csproj", "{0CB3B15E-3D9F-41B7-918D-34516CA7EC12}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VtuberBot.VideoDownloader", "VtuberBot.VideoDownloader\VtuberBot.VideoDownloader.csproj", "{8800E1D8-40BB-4868-ACB2-62FB16DA5BFE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VtuberBot.ReplaySpider", "VtuberBot.ReplaySpider\VtuberBot.ReplaySpider.csproj", "{B4BD4A28-68AD-49D5-A205-3A7CACA50DAA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VtuberBot.ReplaySpider", "VtuberBot.ReplaySpider\VtuberBot.ReplaySpider.csproj", "{B4BD4A28-68AD-49D5-A205-3A7CACA50DAA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,10 +31,6 @@ Global
 		{29D4EE85-2C22-4D0E-8206-A81C8F647CCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{29D4EE85-2C22-4D0E-8206-A81C8F647CCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{29D4EE85-2C22-4D0E-8206-A81C8F647CCF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0CB3B15E-3D9F-41B7-918D-34516CA7EC12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0CB3B15E-3D9F-41B7-918D-34516CA7EC12}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0CB3B15E-3D9F-41B7-918D-34516CA7EC12}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0CB3B15E-3D9F-41B7-918D-34516CA7EC12}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8800E1D8-40BB-4868-ACB2-62FB16DA5BFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8800E1D8-40BB-4868-ACB2-62FB16DA5BFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8800E1D8-40BB-4868-ACB2-62FB16DA5BFE}.Release|Any CPU.ActiveCfg = Release|Any CPU

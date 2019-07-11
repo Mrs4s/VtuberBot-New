@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
@@ -19,7 +20,7 @@ namespace VtuberBot.Spider.Services.Bilibili
         {
             using (var client = HttpClientExtensions.CreateClient(useGZip: true))
             {
-                var json = JObject.Parse(await client.GetStringAsync($"https://api.bilibili.com/x/space/app/index?mid={userId}"));
+                var json = JObject.Parse(await client.GetStringAsync(Sign("https://api.bilibili.com/x/space/app/index", new { mid = userId })));
                 return json["data"]["info"].ToObject<BilibiliUser>();
             }
         }
@@ -51,8 +52,8 @@ namespace VtuberBot.Spider.Services.Bilibili
         {
             using (var client = HttpClientExtensions.CreateClient(useGZip: true))
             {
-                var json = JToken.Parse(await client.GetStringAsync(
-                    "https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/space_history?host_uid=" + userId));
+                var json = JToken.Parse(await client.GetStringAsync(Sign(
+                    "https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/space_history", new { host_uid = userId })));
                 if (json.Value<int>("code") != 0)
                     return new List<BilibiliDynamic>();
                 return json["data"]["cards"].ToArray().Select(v => v.ToObject<BilibiliDynamic>()).ToList();
@@ -61,14 +62,23 @@ namespace VtuberBot.Spider.Services.Bilibili
 
         public static async Task<BilibiliLiveRoom> GetLiveRoomAsync(long roomId)
         {
-            using (var client = HttpClientExtensions.CreateClient())
+            try
             {
-                var json = JToken.Parse(await client.GetStringAsync(Sign("https://api.live.bilibili.com/xlive/app-room/v1/index/getInfoByRoom", new {room_id = roomId})));
-                return json["data"]?["room_info"]?.ToObject<BilibiliLiveRoom>();
+                using (var client = HttpClientExtensions.CreateClient())
+                {
+                    var json = JToken.Parse(await client.GetStringAsync(Sign(
+                        "https://api.live.bilibili.com/xlive/app-room/v1/index/getInfoByRoom",
+                        new { room_id = roomId })));
+                    return json["data"]?["room_info"]?.ToObject<BilibiliLiveRoom>();
+                }
+            }
+            catch
+            {
+                return null;
             }
         }
 
-        private static string Sign(string url, object requestParams)
+        public static string Sign(string url, object requestParams)
         {
             var appParams = requestParams.GetType().GetRuntimeFields().ToDictionary(
                 key => key.Name.Split('<').Last().Split('>').First(), value => value.GetValue(requestParams));
