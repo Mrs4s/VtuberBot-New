@@ -340,9 +340,9 @@ namespace VtuberBot.Spider.Services.Youtube
 
         public static JToken ParseYoutubeInitData(string page)
         {
-            var initData = Regex.Match(page, "ytInitialData\"] = JSON\\.parse\\(\"(.*?)\\);").Groups.First().Value
-                .Replace("ytInitialData\"] = JSON.parse(\"", string.Empty).Replace("\\\"","\"").Replace("\\\\","\\");
-            initData = initData.Substring(0, initData.Length - 3);
+            var initData = Regex.Match(page, "ytInitialData\"] = (.*?)};").Groups.First().Value
+                .Replace("ytInitialData\"] = ", string.Empty);
+            initData = initData.Substring(0, initData.Length - 1);
             return JToken.Parse(initData);
         }
 
